@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Project Blackjack</title>
+        <style>
+            #background {
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 100%;
+                background: rgb(40,128,104);
+            }.card {
+                height: 125px;
+                width: 90px;
+                background: rgb(255, 253, 245);
+                border-radius: 5%;
+                border: 1px solid black;
+                position: absolute;
+                left: 83px;
+                z-index: 0;
+            } .card .num {
+                position: absolute;
+                font: 35px monospace;
+            } .card .topnum {
+                text-align: left;
+                top: -35px;
+                left: 4px;
+            } .card .bottomnum {
+                text-align: right;
+                right: 3px;
+                bottom: -35px;
+            } .card .suit {
+                position: absolute;
+                font: 30px monospace;
+            } .card .topsuit {
+                top: -27px;
+                right: 6px;
+            } .card .bottomsuit {
+                bottom: -29px;
+                left: 5px;
+            } .card .middlesuit {
+                font-size: 40px;
+                text-align: center;
+                left: 25px;
+            } .cardback {
+                height: 125px;
+                width: 90px;
+                background: skyblue;
+                border-radius: 5%;
+                border: 1px solid black;
+                position: absolute;
+                left: 83px;
+            } button {
+                height: 60px;
+                width: 90px;
+                position: absolute;
+                font: 35px serif;
+                left: 15%;
+                border-radius: 10%;
+                transform: translate(-50%, -50%);
+            } button:enabled:hover {
+                background: rgb(200, 200, 190);
+            }.specialButtons {
+                border-radius: 35%;
+                left: 22%;
+                height: 80px;
+                width: 80px;
+                font-size: 20px;
+            } .score {
+                position: absolute;
+                font-size: 36px;
+                text-align: center;
+                left: 15%;
+                width: 140px;
+                transform: translateX(-25px);
+            } .winMsgBfr {
+                position: absolute;
+                margin: 0;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                text-align: center;
+                transition-duration: 2s;
+                transition-delay: 0s;
+                opacity: 0;
+            } .winMsg {
+                opacity: 1;
+                background: rgb(0, 0, 0, 30%);
+                z-index: 5;
+                transition-duration: 2s;
+                transition-delay: 0.25s;
+            } .winPBfr {
+                opacity: 0;
+                position: absolute;
+                top: 30%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 50px;
+                transition-duration: 0.5s;
+                transition-delay: 0s;
+                white-space: nowrap;
+            } .winP {
+                opacity: 1;
+                font-size: 80px;
+                transition-duration: 2s;
+                white-space: nowrap;
+                transition-delay: 0.50s
+            } .newGameBfr {
+                width: 120px;
+                height: 100px;
+                position: absolute;
+                left: 95%;
+                top: 95%;
+                transform: translate(-100%, -100%);
+                opacity: 0;
+                transition-duration: 0s;
+                transition-delay: 0s;
+            } .newGame {
+                opacity: 1;
+                z-index: 10;
+                transition-delay: 1s;
+                transition-duration: 2s;
+            } #bet {
+                white-space: nowrap;
+                margin: 0;
+            } #betSlider {
+                margin: 0;
+                opacity: 0.7;
+            } #betSlider:hover {
+                opacity: 1;
+            } #betSlider:disabled {
+                opacity: 0.5;
+            } #money {
+                white-space: nowrap;
+                margin: 0;
+            } #betAndMoneyDiv {
+                position: absolute;
+                top: 7%;
+                right: 10%;
+                height: 20%;
+                font-size: 30px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="background"> </div>
+        <button id="deal" style="top:30%"> Deal </button>
+        <button id="hit"  style="top:50%" disabled> Hit </button>
+        <button id="stay"  style="top:70%" disabled> Stay </button>
+        <button id="split" class="specialButtons" style="top: 60%; opacity: 0" disabled> Split </button>
+        <button id="doubleDown" class="specialButtons" style="top: 40%; opacity: 0" disabled> Double Down </button>
+        <button id="splitHit" style="top: 50%; left: 85%; opacity: 0" disabled> Hit </button>
+        <button id="splitStay" style="top: 70%; left: 85%; opacity: 0" disabled> Stay </button>
+        <p class="score" id="playerScore" style="top:73%"> </p>
+        <p class="score" id="dealerScore" style="top:15%"> </p>
+        <p class="score" id="splitScore" style="top:40%; left: 60%; opacity: 0"> Total: </p>
+        <div class="winMsgBfr"> </div>
+        <p id="winP" class="winPBfr"> You win! </p>
+        <button id="newGame" class="newGameBfr" disabled> New Game </button>
+        <div id="betAndMoneyDiv">
+        <p id="bet"> Bet: 5 </p>
+        <input type="range" id="betSlider" min="5" max="100" value="5">
+        <p id="money"> Money: 100</span> </p>
+        </div>
+    </body>
+    <script>
+        /* Initial varibles */
+        var bust = false;
+        var win = null;
+        var isSplit = false;
+        var doubled = false;
+        var money = 100;
+        var slider = document.querySelector("#betSlider");
+        var splitWin = [null, null];
+        
+        /* Button vars */
+        var deal = document.querySelector("#deal");
+        var hit = document.querySelector("#hit");
+        var stay = document.querySelector("#stay");
+        var split = document.querySelector("#split");
+        var splitHit = document.querySelector("#splitHit");
+        var splitStay = document.querySelector("#splitStay");
+        var doubleDown = document.querySelector("#doubleDown");
+        var newGame = document.querySelector("#newGame")
+
+        /* Bet slider function */
+        slider.oninput = function() {
+            document.querySelector("#bet").innerHTML = "Bet: " + this.value;
+        }
+        
+        /* Creates the variable to store the suits */
+        var suits = ["♥️", "♦️", "♠️", "♣️"];
+        
+        /* Scoring function */
+        var score = function(h) {
+            var ace = false;
+            var s = 0;
+            for (var i = 0; i < h.length; i++) {
+                if (h[i][0] === "A") {
+                    s += 11;
+                    ace = true;
+                } else if (h[i][0] === "J" || h[i][0] === "Q" || h[i][0] === "K") {
+                    s += 10;
+                } else {
+                    s += h[i][0];
+                }
+            }
+            if (s > 21 && ace === true) {
+                s -= 10;
+            }
+            return s;
+        };
+
+        /* Creates the variables for the delt hands */
+        var dealerHand = [];
+        var playerHand = [];
+        var drawPile = [];
+        var splitHand = [];
+
+        /* Create new card function */
+        var newCard = function(x, y, num, suit, side) {
+            // Creates the card
+            var newC = document.createElement("div");
+            
+            // Card front
+            if (side === 1) {
+                newC.className = "card";
+                var pclasses = ["num topnum", "num bottomnum", "suit topsuit", "suit bottomsuit", "suit middlesuit"];
+                var numsuitValue = [num, num, suits[suit], suits[suit], suits[suit]];
+                for (var i = 0; i < 5; i++) {
+                    var numsuit = document.createElement("p");
+                    numsuit.className = pclasses[i];
+                    numsuit.textContent = numsuitValue[i]
+                    newC.appendChild(numsuit);
+                }
+            }
+            
+            // Card back
+            if (side === 0) {
+                newC.className = "cardback";
+            }
+            
+            // Appends it
+            document.body.appendChild(newC);
+            newC.style.left = x + "%";
+            newC.style.top = y + "%";
+        }
+        
+        /* Deal function */
+        var dealing = function() {
+            var deck = [];
+            for (var i = 1; i < 14; i++) {
+                for (var j = 0; j < 4; j++) {
+                    deck.push([i, j]);
+                }
+            }
+            var shuffled = [];
+            for (var i = 0; i < 52; i++) {
+                var s = Math.floor(Math.random(0) * deck.length);
+                shuffled.push(deck[s]);
+                deck.splice(s, 1);
+            }
+            dealerHand = [];
+            playerHand = [];
+            
+            dealerHand.push(shuffled[shuffled.length-1]);
+            shuffled.splice(shuffled.length-1, 1);
+            playerHand.push(shuffled[shuffled.length-1]);
+            shuffled.splice(shuffled.length-1, 1);
+            dealerHand.push(shuffled[shuffled.length-1]);
+            shuffled.splice(shuffled.length-1, 1);
+            playerHand.push(shuffled[shuffled.length-1]);
+            shuffled.splice(shuffled.length-1, 1);
+            dealerHand[0][2] = 1;
+            dealerHand[1][2] = 0;
+            playerHand[0][2] = 1;
+            playerHand[1][2] = 1;
+
+            if (playerHand[0][0] >= 10 && playerHand[1][0] >= 10) {
+                document.querySelector("#split").disabled = false;
+                document.querySelector("#split").style.opacity = 1;
+            } else if (playerHand[0][0] === playerHand[1][0]) {
+                document.querySelector("#split").disabled = false;
+                document.querySelector("#split").style.opacity = 1;
+            }
+            
+            drawPile = shuffled;
+            
+            // Creates the cards
+            for (var i = 0; i < dealerHand.length; i++) {
+                var c = dealerHand[i];
+                if (dealerHand[i][0] === 1) {
+                    dealerHand[i][0] = "A";
+                } else if (dealerHand[i][0] === 11) {
+                    dealerHand[i][0] = "J";
+                } else if (dealerHand[i][0] === 12) {
+                    dealerHand[i][0] = "Q";
+                } else if (dealerHand[i][0] === 13) {
+                    dealerHand[i][0] = "K";
+                }
+                newCard(34 + (i*8), 4, c[0], c[1], c[2]);
+            }
+            for (var i = 0; i < playerHand.length; i++) {
+                var c = playerHand[i];
+                if (playerHand[i][0] === 1) {
+                    playerHand[i][0] = "A";
+                } else if (playerHand[i][0] === 11) {
+                    playerHand[i][0] = "J";
+                } else if (playerHand[i][0] === 12) {
+                    playerHand[i][0] = "Q";
+                } else if (playerHand[i][0] === 13) {
+                    playerHand[i][0] = "K";
+                }
+                newCard(34 + (i*8), 65, c[0], c[1], c[2]);
+            }
+            deal.disabled = true;
+            hit.disabled = false;
+            stay.disabled = false;
+            doubleDown.disabled = false;
+            doubleDown.style.opacity = 1;
+            slider.disabled = true;
+            
+            document.querySelector("#playerScore").innerHTML = "Total: " + score(playerHand);
+        };
+        deal.addEventListener("click", dealing);
+        
+        /* Split function */
+        var splitting = function() {
+            // Disabled the split and double down button and enabled the other buttons
+            split.style.opacity = 0;
+            isSplit = true;
+            split.disabled = true;
+            splitHit.style.opacity = 1;
+            splitStay.style.opacity = 1;
+            doubleDown.disabled = true;
+            doubleDown.style.opacity = 0;
+
+            // Moves the cards and moves the second card to the split hand
+            splitHand[0] = playerHand[1];
+            playerHand.splice(1, 1);
+            var crds = document.querySelectorAll(".card")
+            crds[1].style.top = "50%";
+            crds[2].style.top = "50%";
+            crds[2].style.left = "60%";
+
+            // Moves the total and adds the second total
+            var scr = document.querySelector("#playerScore");
+            var spltScr = document.querySelector("#splitScore");
+            spltScr.style.opacity = 1;
+            scr.style.top = "40%";
+            scr.style.left = "34%";
+
+            // Adds the seconds card
+            playerHand.push(drawPile[drawPile.length-1]);
+            drawPile.splice(drawPile.length-1, 1);
+            playerHand[1][2] = 1;
+
+            // Creates the second card
+            var c = playerHand[1];
+            if (c[0] === 1) {
+                c[0] = "A";
+            } else if (c[0] === 11) {
+                c[0] = "J";
+            } else if (c[0] === 12) {
+                c[0] = "Q";
+            } else if (c[0] === 13) {
+                c[0] = "K";
+            }
+            newCard(34, 58, c[0], c[1], c[2]);
+
+            // Resets the scoring
+            document.querySelector("#playerScore").textContent = "Total: " + score(playerHand);
+        }
+        split.addEventListener("click", splitting);
+
+        /* Hit function */
+        var hitting = function() {
+            if (isSplit === false) {
+                split.disabled = true;
+                split.style.opacity = 0;
+                doubleDown.style.opacity = 0;
+                doubleDown.disabled = true;
+            }
+
+            playerHand.push(drawPile[drawPile.length-1]);
+            drawPile.splice(drawPile.length-1, 1);
+            var l = playerHand.length - 1;
+            var c = playerHand[l];
+            var n = playerHand[playerHand.length-1][0];
+            if (n === 1) {
+                n = playerHand[playerHand.length-1][0] = "A";
+            } else if (n === 11) {
+                n = playerHand[playerHand.length-1][0] = "J";
+            } else if (n === 12) {
+                n = playerHand[playerHand.length-1][0] = "Q";
+            } else if (n === 13) {
+                n = playerHand[playerHand.length-1][0] = "K";
+            }
+
+            if (isSplit == false) {
+                newCard(34 + 8*l, 65, n, c[1], 1);
+            } else if (isSplit === true) {
+                newCard (34, 50 + 8*l, n, c[1], 1);
+            }
+            
+            document.querySelector("#playerScore").textContent = "Total: " + score(playerHand);
+            
+            if (score(playerHand) > 21 && isSplit === false) {
+                hit.disabled = true;
+                stay.disabled = true;
+                
+                var wP = document.querySelector("#winP");
+                wP.classList.toggle("winP");
+                wP.textContent = "You bust!";
+                win = "bust";
+                var w = document.querySelector("div.winMsgBfr");
+                w.classList.toggle("winMsg");
+                var newGame = document.querySelector("button#newGame")
+                newGame.classList.toggle("newGame")
+                newGame.disabled = false;
+            } else if (score(playerHand) > 21 && isSplit === true) {
+                hit.disabled = true;
+                stay.disabled = true;
+                splitHit.disabled = false;
+                splitStay.disabled = false;
+                splitWin[0] = "Bust";
+
+                // Creates the second card for the second pile
+                splitHand.push(drawPile[drawPile.length-1]);
+                drawPile.splice(drawPile.length-1, 1);
+                splitHand[1][2] = 1;
+                var c = splitHand[1];
+                if (c[0] === 1) {
+                    c[0] = "A";
+                } else if (c[0] === 11) {
+                    c[0] = "J";
+                } else if (c[0] === 12) {
+                    c[0] = "Q";
+                } else if (c[0] === 13) {
+                    c[0] = "K";
+                }
+                newCard(60, 58, c[0], c[1], 1);
+                document.querySelector("#playerScore").textContent = "Bust";
+                document.querySelector("#splitScore").textContent = "Total: " + score(splitHand);
+            }
+        };
+        hit.addEventListener("click", hitting)
+
+        /* Split hit */
+        var splitHitting = function() {
+            splitHand.push(drawPile[drawPile.length-1]);
+            drawPile.splice(drawPile.length-1, 1);
+            var l = splitHand.length - 1;
+            var c = splitHand[l];
+            var n = splitHand[splitHand.length-1][0];
+            if (n === 1) {
+                n = splitHand[splitHand.length-1][0] = "A";
+            } else if (n === 11) {
+                n = splitHand[splitHand.length-1][0] = "J";
+            } else if (n === 12) {
+                n = splitHand[splitHand.length-1][0] = "Q";
+            } else if (n === 13) {
+                n = splitHand[splitHand.length-1][0] = "K";
+            }
+            newCard(60, 50 + 8*l, n, c[1], 1);
+            document.querySelector("#splitScore").textContent = "Total: " + score(splitHand);
+
+            if (score(splitHand) > 21) {
+                document.querySelector("#splitScore").textContent = "Bust";
+                splitWin[1] = "Bust";
+                splitHit.disabled = true;
+                splitStay.disabled = true;
+
+                if (splitWin[0] !== "Bust") {
+                    dealerHand[1][2] = 1;
+                    newCard(42, 4, dealerHand[1][0], dealerHand[1][1], 1)
+                    while (score(dealerHand) < 17) {
+                        dealerHand.push(drawPile[drawPile.length-1]);
+                        drawPile.splice(drawPile.length-1, 1);
+                        var l = dealerHand.length-1;
+                        var c = dealerHand[l];
+                        var n = c[0];
+                        if (n === 1) {
+                            c[0] = "A";
+                        } else if (n === 11) {
+                            c[0] = "J";
+                        } else if (n === 12) {
+                            c[0] = "Q";
+                        } else if (n === 13) {
+                            c[0] = "K";
+                        }
+                        newCard(34 + 8*l, 4, c[0], c[1], 1)
+                    }
+                    document.querySelector("#dealerScore").textContent = "Total: " + score(dealerHand);
+
+                    var dh = score(dealerHand);
+                    var ph = score(playerHand);
+                    if (dh <= 21) {
+                        if (ph > dh) {
+                            splitWin[0] = "Win";
+                        } else if (ph === dh) {
+                            splitWin[0] = "Push";
+                        } else if (ph < dh) {
+                            splitWin[0] = "Lose";
+                        }
+                    } else if (dh > 21) {
+                        splitWin[0] = "Win";
+                    }
+                }
+
+                var wP = document.querySelector("#winP");
+                wP.classList.toggle("winP");
+                var w = document.querySelector("div.winMsgBfr");
+                w.classList.toggle("winMsg");
+                var newGame = document.querySelector("button#newGame")
+                newGame.classList.toggle("newGame")
+                newGame.disabled = false;
+                document.querySelector("#winP").textContent = splitWin[0] + " and " + splitWin[1] + "!"
+            }
+        };
+        splitHit.addEventListener("click", splitHitting)
+
+        /* Double down function */
+        var doublingDown = function() {
+            hitting();
+            if (win !== "bust") {
+                staying();
+            }
+            doubled = true;
+        }
+        doubleDown.addEventListener("click", doublingDown)
+
+        /* Stay function */
+        var staying = function() {
+            if (isSplit === false) {
+                split.disabled = true;
+                split.style.opacity = 0;
+                doubleDown.style.opacity = 0;
+                doubleDown.disabled = true;
+
+            dealerHand[1][2] = 1;
+            var c = dealerHand[1];
+            newCard(42, 4, c[0], c[1], c[2])
+            
+            while (score(dealerHand) < 17) {
+                dealerHand.push(drawPile[drawPile.length-1]);
+                drawPile.splice(drawPile.length-1, 1);
+                var l = dealerHand.length-1;
+                var c = dealerHand[l];
+                var n = c[0];
+                if (n === 1) {
+                    c[0] = "A";
+                } else if (n === 11) {
+                    c[0] = "J";
+                } else if (n === 12) {
+                    c[0] = "Q";
+                } else if (n === 13) {
+                    c[0] = "K";
+                }
+                newCard(34 + 8*l, 4, c[0], c[1], 1)
+            }
+            
+            var ds = score(dealerHand);
+            var ps = score(playerHand);
+            if (ds <= 21) {
+                if (ds > ps) {
+                    win = "lose";
+                } else if (ds < ps) {
+                    win = "win";
+                } else if (ds === ps) {
+                    win = "push";
+                }
+            } else if (ds > 21) {
+                win = "win";
+            }
+            document.querySelector("#dealerScore").textContent = "Total: " + ds;
+            
+            var wP = document.querySelector("#winP");
+            wP.classList.toggle("winP");
+            wP.textContent = "You " + win + "!"
+            var w = document.querySelector("div.winMsgBfr");
+            w.classList.toggle("winMsg");
+            var newGame = document.querySelector("button#newGame")
+            newGame.classList.toggle("newGame")
+            newGame.disabled = false;
+            } else if (isSplit === true) {
+                splitHit.disabled = false;
+                splitStay.disabled = false;
+            }
+            
+            hit.disabled = true;
+            stay.disabled = true;
+            if (isSplit === true) {
+                // Creates the second card for the second pile
+                splitHand.push(drawPile[drawPile.length-1]);
+                drawPile.splice(drawPile.length-1, 1);
+                splitHand[1][2] = 1;
+                var c = splitHand[1];
+                if (c[0] === 1) {
+                    c[0] = "A";
+                } else if (c[0] === 11) {
+                    c[0] = "J";
+                } else if (c[0] === 12) {
+                    c[0] = "Q";
+                } else if (c[0] === 13) {
+                    c[0] = "K";
+                }
+                newCard(60, 58, c[0], c[1], 1);
+                document.querySelector("#splitScore").textContent = "Total: " + score(splitHand);
+            }
+        };
+        stay.addEventListener("click", staying)
+
+        /* Split stay function */
+        var splitStaying = function() {
+            dealerHand[1][2] = 1;
+            var c = dealerHand[1];
+            newCard(42, 4, c[0], c[1], c[2])
+            
+            while (score(dealerHand) < 17) {
+                dealerHand.push(drawPile[drawPile.length-1]);
+                drawPile.splice(drawPile.length-1, 1);
+                var l = dealerHand.length-1;
+                var c = dealerHand[l];
+                var n = c[0];
+                if (n === 1) {
+                    c[0] = "A";
+                } else if (n === 11) {
+                    c[0] = "J";
+                } else if (n === 12) {
+                    c[0] = "Q";
+                } else if (n === 13) {
+                    c[0] = "K";
+                }
+                newCard(34 + 8*l, 4, c[0], c[1], 1)
+            }
+            document.querySelector("#dealerScore").textContent = "Total: " + score(dealerHand);
+
+            var dh = score(dealerHand);
+            var ph = score(playerHand);
+            var sh = score(splitHand);
+            if (splitWin[0] !== "Bust" && dh <= 21) {
+                if (ph > dh) {
+                    splitWin[0] = "Win";
+                } else if (ph === dh) {
+                    splitWin[0] = "Push";
+                } else if (ph < dh) {
+                    splitWin[0] = "Lose";
+                }
+            } else if (splitWin[0] !== "Bust" && dh > 21) {
+                splitWin[0] = "Win";
+            }
+            if (dh <= 21) {
+                if (sh > dh) {
+                    splitWin[1] = "Win";
+                } else if (sh === dh) {
+                    splitWin[1] = "Push";
+                } else if (sh < dh) {
+                    splitWin[1] = "Lose";
+                }
+            } else if (dh > 21) {
+                splitWin[1] = "Win";
+            }
+
+            var wP = document.querySelector("#winP");
+            wP.classList.toggle("winP");
+            wP.textContent = "You " + win + "!"
+            var w = document.querySelector("div.winMsgBfr");
+            w.classList.toggle("winMsg");
+            var newGame = document.querySelector("button#newGame")
+            newGame.classList.toggle("newGame")
+            newGame.disabled = false;
+            document.querySelector("#winP").textContent = splitWin[0] + " and " + splitWin[1] + "!"
+        }
+        splitStay.addEventListener("click", splitStaying);
+        
+        /* Restart function */
+        var restarting = function() {
+            document.querySelector("div.winMsgBfr").classList.toggle("winMsg");
+            document.querySelector("#winP").classList.toggle("winP");
+            var c = document.querySelectorAll(".card");
+            var cb = document.querySelectorAll(".cardback");
+            for (var i = 0; i < c.length; i++) {
+                c[i].remove();
+            } for (var i = 0; i < cb.length; i++) {
+                cb[i].remove();
+            }
+            document.querySelector("#deal").disabled = false;
+            var newGame = document.querySelector("button#newGame")
+            newGame.classList.toggle("newGame");
+            newGame.disabled = true;
+            document.querySelector("#playerScore").textContent = "";
+            document.querySelector("#dealerScore").textContent = "";
+            slider.disabled = false;
+            document.querySelector("#splitScore").textContent = "";
+            splitHit.style.opacity = 0;
+            splitStay.style.opacity = 0;
+
+            if (win === "win" && isSplit === false) {
+                if (doubled === true) {
+                    money += (slider.valueAsNumber*2);
+                } else {
+                    money += slider.valueAsNumber;
+                }
+            } else if (win === "bust" && isSplit === false || win === "lose" && isSplit === false) {
+                if (doubled === true) {
+                    money -= (slider.valueAsNumber*2);
+                } else {
+                    money -= slider.valueAsNumber;
+                }
+            }
+
+            if (isSplit === true) {
+                if (splitWin[0] === "Win") {
+                    money += slider.valueAsNumber;
+                } else if (splitWin[0] === "Lose" || splitWin[0] === "Bust") {
+                    money -= slider.valueAsNumber;
+                }
+                if (splitWin[1] === "Win") {
+                    money += slider.valueAsNumber;
+                } else if (splitWin[1] === "Lose" || splitWin[1] === "Bust") {
+                    money -= slider.valueAsNumber;
+                }
+            }
+            document.querySelector("#money").innerHTML = "Money: " + money;
+            win = null;
+            splitWin = [null, null];
+            doubled = false;
+            isSplit = false;
+            var ps = document.querySelector("#playerScore");
+            ps.style.top = "73%";
+            ps.style.transform = "translate(0, 0)";
+            ps.style.left = "15%"
+            splitHand = [];
+        }
+        newGame.addEventListener("click", restarting);
+    </script>
+</html>
